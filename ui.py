@@ -7,7 +7,8 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QMessageBox,
     QGroupBox,
-    QComboBox
+    QComboBox,
+    QStyle
 )
 from PySide6.QtCore import Qt
 import importer_creator
@@ -37,20 +38,37 @@ class TextureImporterMaterialCreator(QWidget):
 
         # Création du layout principal
         self.main_layout = QVBoxLayout(self)
-        
+
         # Création des 2 sections de l'outil
         self.texture_group_box = QGroupBox("Texture Importer")
         self.material_group_box = QGroupBox("Material Creator")
-
-        # Création des layouts des group box et ajoute les group box au layout
+        
+        # Création des layouts des group box
         self.texture_group_layout = QVBoxLayout()
         self.material_group_layout = QVBoxLayout()
 
+        # Ajout des groups box dans les groups layout
+        self.texture_group_box.setLayout(self.texture_group_layout)
+        self.material_group_box.setLayout(self.material_group_layout)
 
-        # Création du QPushButton
+        # Label 
+        self.texture_files_label = QLabel("Select Texture Files")
+
+        # Création du QPushButton pour browse les textures
+        self.browse_texture_button = QPushButton("Browse Textures")
+        self.browse_texture_button.setMinimumHeight(100)
+        self.browse_texture_button.setIcon(
+            self.style().standardIcon(QStyle.SP_DirOpenIcon)
+        )
+
+        # Ajoute les widgets dans le layout texture group
+        self.texture_group_layout.addWidget(self.texture_files_label)
+        self.texture_group_layout.addWidget(self.browse_texture_button)
+
+        # Création du QPushButton pour la création du material
         self.create_material_button = QPushButton("Create Material")
 
-        # Ajout les widgets au layout
+        # Ajout les widgets et les sub layout au layout
         self.main_layout.addWidget(self.texture_group_box)
         self.main_layout.addWidget(self.material_group_box)
         self.main_layout.addWidget(self.create_material_button)
