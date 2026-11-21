@@ -10,10 +10,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QStyle,
     QRadioButton,
-    QSizePolicy
+    QFileDialog,
+    QListWidget
 )
 from PySide6.QtCore import Qt
 import importer_creator
+import os
 
 import maya.OpenMayaUI as omui
 from shiboken6 import wrapInstance
@@ -30,10 +32,12 @@ class TextureImporterMaterialCreator(QWidget):
         super().__init__(maya_main_window())
         self.setWindowFlags(Qt.Window)
         self.source = None
+        # Stock les chemins complets des textures
+        self.texture_paths = []
 
         self.setWindowTitle("Texture Importer and Material Creator")
         self.setMinimumWidth(450)
-        self.setMinimumHeight(450)
+        self.setMinimumHeight(480)
         self.setMaximumHeight(650)
         self.create_ui()
 
@@ -48,15 +52,6 @@ class TextureImporterMaterialCreator(QWidget):
 
         # Variable pour la hauteur des champs
         self.height_value = 25
-
-        # Pour que sa soit responsive
-        # self.texture_group_box.setSizePolicy(
-        #     QSizePolicy.Preferred, QSizePolicy.Maximum
-        # )
-        # self.material_group_box.setSizePolicy(
-        #     QSizePolicy.Preferred, QSizePolicy.Maximum
-        # )
-
         
         # Création des layouts des group box
         self.texture_group_layout = QVBoxLayout()
@@ -79,9 +74,17 @@ class TextureImporterMaterialCreator(QWidget):
             self.style().standardIcon(QStyle.SP_DirOpenIcon)
         )
 
+        # Création du QListWidget pour afficher les texture sélectionné
+        self.texture_list_box = QListWidget()
+        self.texture_list_box.setVisible(False)
+
+        # Appelle la fonction browse_textures
+        self.browse_texture_button.clicked.connect(self.browse_textures)
+
         # Ajoute les widgets dans le layout texture group
         self.texture_group_layout.addWidget(self.texture_files_label)
         self.texture_group_layout.addWidget(self.browse_texture_button)
+        self.texture_group_layout.addWidget(self.texture_list_box)
 
 
         #### UI DU GROUP BOX MATERIAL ####
@@ -147,6 +150,51 @@ class TextureImporterMaterialCreator(QWidget):
         self.main_layout.addWidget(self.texture_group_box)
         self.main_layout.addWidget(self.material_group_box)
         self.main_layout.addWidget(self.create_material_button)
+
+    def browse_textures(self):
+        """Ouvre l'explorateur pour sélectionner des textures."""
+
+        self.texture_list_box.setVisible(True)
+
+        files_to_browse, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Select Textures",
+            "",
+            "Image Files (*.png *.jpg *.jpeg *.tif *.tiff *.tga *.exr)"
+        )
+
+        if files_to_browse:
+            # Garde les chemins complets
+            self.texture_paths = files_to_browse
+
+            # Récupere juste le nom des fichiers (pour afficher dans la box)
+            texture_file_names = [os.path.basename(file) for file in files_to_browse]
+
+            # Affiche les noms dans QListWidget
+            self.texture_list_box.clear()
+
+            # Ajoute les files sélectionner à la liste de texture
+            self.texture_list_box.addItems(texture_file_names)
+
+
+
+
+    def create_message(self, message_type):
+
+        if message_type == "name_warning":
+            QMessageBox.warning(
+                self,
+                "WARNING",
+                "Please add a name to your new material."
+
+            )
+
+        elif message_type == "done":
+            QMessageBox.information(
+                self,
+                "Material Created",
+                "Material created succesfully."
+            )
         
 
 
