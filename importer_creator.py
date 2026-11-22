@@ -3,6 +3,7 @@ import os
 import re
 
 # Si possible je voudrais avoir deux fichier de logique .py un pour les textures et un pour les matériaux à valider avec le prof
+# Demander au prof si on est obligé de faire modification en live update car ça pourrait tout faire exploser
 
 def detect_texture_type(file_name):
     """Détecte le type de texture à partir du nom du fichier."""

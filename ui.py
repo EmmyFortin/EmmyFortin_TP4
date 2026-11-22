@@ -41,7 +41,7 @@ class TextureImporterMaterialCreator(QWidget):
 
         self.setWindowTitle("Texture Importer and Material Creator")
         self.setMinimumWidth(450)
-        self.setMinimumHeight(480)
+        self.setMinimumHeight(500)
         self.setMaximumHeight(650)
         self.create_ui()
 
@@ -116,22 +116,26 @@ class TextureImporterMaterialCreator(QWidget):
         # Actif par défaut
         self.radio_button_create_new_material.setChecked(True)
 
-        # QComboxBox qui affiche les mat existants
+        # QComboxBox et QLabel qui affiche les mat existants
+        self.existing_material_box_label = QLabel("Select Existing Material")
         self.existing_material_box = QComboBox()
         self.existing_material_box.setFixedHeight(self.height_value)
         # Hidden au départ
         self.existing_material_box.setVisible(False)
+        self.existing_material_box_label.setVisible(False)
 
         # Si on selectionne le radio button use existing mat on affiche le QComboBox
         self.radio_button_use_existing_material.toggled.connect(
-            self.existing_material_box.setVisible
+            self.update_materials_fields
         )
 
         # Ajoute les widgets dans le layout du material mode
         self.material_mode_layout.addWidget(self.material_mode_label)
         self.material_mode_layout.addWidget(self.radio_button_create_new_material)
         self.material_mode_layout.addWidget(self.radio_button_use_existing_material)
+        self.material_mode_layout.addWidget(self.existing_material_box_label)
         self.material_mode_layout.addWidget(self.existing_material_box)
+        
 
         # Layout de material type 
         self.material_type_layout = QVBoxLayout()
@@ -223,7 +227,7 @@ class TextureImporterMaterialCreator(QWidget):
             # Ajoute le QComboBox dans la deuxième colonne de la table
             self.texture_table_box.setCellWidget(row, 1, self.texture_type_box)
 
-            # Si le type de texture détecter n'est pas connue (pas dans dict)
+            # Si le type de texture détecté n'est pas connu (pas dans dict)
             # On appelle create_message avec le type de message unknown texture
             if texture_type == "Unknown":
                 self.create_message("unknown_texture", file_name)
@@ -245,6 +249,26 @@ class TextureImporterMaterialCreator(QWidget):
 
         return texture_info
 
+    def update_materials_fields(self, checked):
+        """Met à jour les champs selon le mode de matériaux choisi."""
+
+        # Affiche ou cache le existing_material_box 
+        self.existing_material_box.setVisible(checked)
+        self.existing_material_box_label.setVisible(checked)
+
+        # Active ou désactive le champ de nom (car si mat existe déjà, y déja un nom) et le material_type_box (car le type de mat est déjà définit)
+        self.material_name_field.setEnabled(not checked)
+        self.material_type_box.setEnabled(not checked)
+
+        # J'aime pas disable state du QLineEdit donc je le change comme css
+        self.material_name_field.setStyleSheet("""
+            QLineEdit:disabled {
+                background-color: #4B4B4B;
+                color: #999999;
+                border: none;
+            }
+        """)
+
     def transmit_material_infos(self):
         """Récupère et transmet les infos des matériaux."""
 
@@ -254,8 +278,15 @@ class TextureImporterMaterialCreator(QWidget):
             material_type = self.material_type_box.currentText()
             print(material_type)
 
+            # Récupère le nom du nouveau material
+            material_name = self.material_name_field.text().strip()
+
         elif self.radio_button_use_existing_material.isChecked():
             print("exist mat")
+
+            # Récupère le nom du material existant sélectionné dans le existing material box
+            material_name = self.existing_material_box.currentText()
+
 
 
     def create_message(self, message_type, unknown_texture_message = ""):
