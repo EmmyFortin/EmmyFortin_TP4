@@ -129,6 +129,11 @@ class TextureImporterMaterialCreator(QWidget):
             self.update_materials_fields
         )
 
+        # Pour update le nom et le type quand on choisi un autre material dans existing_material_box
+        self.existing_material_box.currentTextChanged.connect(
+            self.update_materials_fields
+        )
+
         # Ajoute les widgets dans le layout du material mode
         self.material_mode_layout.addWidget(self.material_mode_label)
         self.material_mode_layout.addWidget(self.radio_button_create_new_material)
@@ -256,11 +261,14 @@ class TextureImporterMaterialCreator(QWidget):
         self.existing_material_box.setVisible(checked)
         self.existing_material_box_label.setVisible(checked)
 
+        # J'hésite à juste les hide totalement, si je les hide pas faudrait update pareil les valeurs des champs sans permettre leur modifications.
+
         # Active ou désactive le champ de nom (car si mat existe déjà, y déja un nom) et le material_type_box (car le type de mat est déjà définit)
         self.material_name_field.setEnabled(not checked)
+        
         self.material_type_box.setEnabled(not checked)
 
-        # J'aime pas disable state du QLineEdit donc je le change comme css
+        # J'aime pas le disable state du QLineEdit donc je le change comme css
         self.material_name_field.setStyleSheet("""
             QLineEdit:disabled {
                 background-color: #4B4B4B;
@@ -268,6 +276,39 @@ class TextureImporterMaterialCreator(QWidget):
                 border: none;
             }
         """)
+
+        # on doit update la liste des materials existants
+        if checked:
+            self.update_existing_materials()
+
+    def update_existing_materials(self):
+        """Met à jour la liste des matériaux existant dans Maya."""
+
+        # Récupère les matériaux dans la scène avec la fonction get_existing_materials dans importer_creator
+        materials = importer_creator.get_existing_materials()
+
+        # Vide la liste pour pas avoir de double
+        self.existing_material_box.clear()
+
+        # Ajout les materiaux dans exisiting material box
+        self.existing_material_box.addItems(materials)
+
+        # Pour le material sélectionner dans le existing_material_box
+        material_name = self.existing_material_box.currentText()
+
+        if material_name:
+            # Récupère le type du mat
+            material_type = importer_creator.get_material_type(material_name)
+
+            # Affiche son nom
+            self.material_name_field.setText(material_name)
+
+            # Affiche son type (check le dict material_types dans importer creator)
+            for current_material_name, maya_material_type in importer_creator.material_types.items():
+                if maya_material_type == material_type:
+                    self.material_type_box.setCurrentText(current_material_name)
+                    # on arrete quand on trouve
+                    break
 
     def transmit_material_infos(self):
         """Récupère et transmet les infos des matériaux."""
@@ -312,6 +353,14 @@ class TextureImporterMaterialCreator(QWidget):
                 "Material Created",
                 "Material created succesfully."
             )
-        
+
+    def create_material(self):
+        """Récupère les infos des textures et des matériaux et créer le material."""
+
+        # Récupère les infos des textures
+        self.transmit_texture_infos()
+        # Récupère les infos du material
+        self.transmit_material_infos()
+
 
 
