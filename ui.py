@@ -11,7 +11,9 @@ from PySide6.QtWidgets import (
     QStyle,
     QRadioButton,
     QFileDialog,
-    QListWidget
+    QListWidget,
+    QTableWidget,
+    QTableWidgetItem
 )
 from PySide6.QtCore import Qt
 import importer_creator
@@ -34,6 +36,8 @@ class TextureImporterMaterialCreator(QWidget):
         self.source = None
         # Stock les chemins complets des textures
         self.texture_paths = []
+        # Stock juste les noms des textures
+        self.texture_file_names = []
 
         self.setWindowTitle("Texture Importer and Material Creator")
         self.setMinimumWidth(450)
@@ -74,9 +78,19 @@ class TextureImporterMaterialCreator(QWidget):
             self.style().standardIcon(QStyle.SP_DirOpenIcon)
         )
 
-        # Création du QListWidget pour afficher les texture sélectionné
-        self.texture_list_box = QListWidget()
-        self.texture_list_box.setVisible(False)
+        # Création du QTableWidget pour afficher les texture sélectionné
+        self.texture_table_box = QTableWidget(columnCount=2)
+
+        # Définit les noms des colonnes
+        self.texture_table_box.setHorizontalHeaderLabels([
+            "Texture Name",
+            "Texture Map Type"
+        ])
+
+        # Combo box qui affichera le type de texture map dans le QTableWidget
+        self.texture_type_box = QComboBox()
+
+        self.texture_table_box.setVisible(False)
 
         # Appelle la fonction browse_textures
         self.browse_texture_button.clicked.connect(self.browse_textures)
@@ -84,7 +98,7 @@ class TextureImporterMaterialCreator(QWidget):
         # Ajoute les widgets dans le layout texture group
         self.texture_group_layout.addWidget(self.texture_files_label)
         self.texture_group_layout.addWidget(self.browse_texture_button)
-        self.texture_group_layout.addWidget(self.texture_list_box)
+        self.texture_group_layout.addWidget(self.texture_table_box)
 
 
         #### UI DU GROUP BOX MATERIAL ####
@@ -128,6 +142,9 @@ class TextureImporterMaterialCreator(QWidget):
         self.material_type_box = QComboBox()
         self.material_type_box.setFixedHeight(self.height_value)
 
+        # Ajoute la liste des materials qu'on peut créer (dict material_types)
+        self.material_type_box.addItems(importer_creator.material_types.keys())
+
         # QLineEdit du nom du material 
         self.material_name_field = QLineEdit()
         self.material_name_field.setFixedHeight(self.height_value)
@@ -154,7 +171,7 @@ class TextureImporterMaterialCreator(QWidget):
     def browse_textures(self):
         """Ouvre l'explorateur pour sélectionner des textures."""
 
-        self.texture_list_box.setVisible(True)
+        self.texture_table_box.setVisible(True)
 
         files_to_browse, _ = QFileDialog.getOpenFileNames(
             self,
@@ -163,23 +180,85 @@ class TextureImporterMaterialCreator(QWidget):
             "Image Files (*.png *.jpg *.jpeg *.tif *.tiff *.tga *.exr)"
         )
 
+        # Si des fichiers sont browser
         if files_to_browse:
             # Garde les chemins complets
             self.texture_paths = files_to_browse
 
             # Récupere juste le nom des fichiers (pour afficher dans la box)
-            texture_file_names = [os.path.basename(file) for file in files_to_browse]
+            self.texture_file_names = [os.path.basename(file) for file in files_to_browse]
 
-            # Affiche les noms dans QListWidget
-            self.texture_list_box.clear()
+            # Efface les anciennes textures sans supprimer les labels des colonnes
+            self.texture_table_box.clearContents()
 
-            # Ajoute les files sélectionner à la liste de texture
-            self.texture_list_box.addItems(texture_file_names)
+            # Définit le nombre de lignes selon le nombre de textures sélectionnés
+            self.texture_table_box.setRowCount(len(self.texture_file_names))
+
+            # Ajoute chaque texture sélectionnée dans la premiere colonne de la table box
+            for row, file_name in enumerate(self.texture_file_names):
+                self.texture_table_box.setItem(
+                    row, 0, QTableWidgetItem(file_name)
+                )
+
+            # Appelle la fonction transmit_texture_info
+            self.display_texture_types()
 
 
+    def display_texture_types(self):
+        """Détecte et affiche les types de textures sélectionnées."""
+
+        # Pour chaque texture sélectionnée
+        for row, file_name in enumerate(self.texture_file_names):
+            # Récupère le type de texture détecté
+            texture_type = importer_creator.detect_texture_type(file_name)
+
+            # On ajoute les types de texture map disponible dans le texture_type_box 
+            self.texture_type_box.addItems(
+                ["Unknown"] + list(importer_creator.texture_types.keys())
+            )
+
+            # Détecte le texture type de la texture sélectionné
+            self.texture_type_box.setCurrentText(texture_type)
+
+            # Ajoute le QComboBox dans la deuxième colonne de la table
+            self.texture_table_box.setCellWidget(row, 1, self.texture_type_box)
+
+            # Si le type de texture détecter n'est pas connue (pas dans dict)
+            # On appelle create_message avec le type de message unknown texture
+            if texture_type == "Unknown":
+                self.create_message("unknown_texture", file_name)
+
+    def transmit_texture_infos(self):
+        """Récupère et transmet les infos des textures."""
+
+        # Stock les infos des textures
+        texture_info = []
+
+        # Récupère les données et les stock dans texture_info
+        for row, file_path in enumerate(self.texture_paths):
+            # Check toutes les textures types box (QComboBox) et les textures type
+            texture_type_box = self.texture_table_box.cellWidget(row,1)
+            texture_type = texture_type_box.currentText()
+
+            # Ajout à texture_info
+            texture_info.append((file_path, texture_type))
+
+        return texture_info
+
+    def transmit_material_infos(self):
+        """Récupère et transmet les infos des matériaux."""
+
+        # Vérifie quel mode de création de matérial est choisi
+        if self.radio_button_create_new_material.isChecked():
+            # Récupère le type choisi dans material_type_box
+            material_type = self.material_type_box.currentText()
+            print(material_type)
+
+        elif self.radio_button_use_existing_material.isChecked():
+            print("exist mat")
 
 
-    def create_message(self, message_type):
+    def create_message(self, message_type, unknown_texture_message = ""):
 
         if message_type == "name_warning":
             QMessageBox.warning(
@@ -187,6 +266,13 @@ class TextureImporterMaterialCreator(QWidget):
                 "WARNING",
                 "Please add a name to your new material."
 
+            )
+
+        elif message_type == "unknown_texture":
+            QMessageBox.warning(
+                self,
+                "Unknown Texture",
+                f"Could not detect the texture type for : {unknown_texture_message}"
             )
 
         elif message_type == "done":
