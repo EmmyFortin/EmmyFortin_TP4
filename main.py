@@ -24,6 +24,7 @@ def main():
         pass
 
     material_tool_window = ui.TextureImporterMaterialCreator()
+    
     material_tool_window.show()
 
 main()
