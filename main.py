@@ -8,11 +8,13 @@ absolute_folder_path = os.path.dirname(absolute_file_path)
 sys.path.append(absolute_folder_path)
 
 import ui
-import importer_creator
+import texture_importer
+import material_creator
 
 # Recharge les modules
+importlib.reload(texture_importer)
+importlib.reload(material_creator)
 importlib.reload(ui)
-importlib.reload(importer_creator)
 
 def main():
     global material_tool_window
