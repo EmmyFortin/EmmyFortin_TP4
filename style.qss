@@ -1,0 +1,39 @@
+
+QPushButton { 
+    background-color: #5D5D5D; 
+    border-radius: 8px; 
+}
+
+QLineEdit:disabled {
+    background-color: #4B4B4B;
+    color: #999999;
+    border: none;
+}
+
+QComboBox{
+    border: 2px solid #5D5D5D;
+    border-radius: 20px;
+    padding: 12px;
+
+}
+
+QComboBox::drop-down{
+    position: relative;
+    right: 10px;
+    height: 20px;
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    /* background-color: transparent;
+    border: none;
+    width: 25px; */
+}
+
+/* QComboBox::down-arrow{
+    width: 22px;
+    height: 22px;
+    border: 1px solid red;
+    
+} */
+
+
+
